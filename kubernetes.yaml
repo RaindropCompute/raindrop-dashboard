@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $PREFIX-dashboard
+  namespace: $NAMESPACE
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: $PREFIX-dashboard
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-secret-env: raindrop/data/$ENV/raindrop-dashboard
+        vault.hashicorp.com/agent-inject-template-env: |
+          {{- with secret "raindrop/data/$ENV/raindrop-dashboard" -}}
+          {{- range $k, $v := .Data.data }}
+          export {{ $k }}={{ $v }}
+          {{- end -}}
+          {{- end -}}
+        vault.hashicorp.com/role: $NAMESPACE
+        vault.hashicorp.com/tls-skip-verify: "true"
+      labels:
+        app: $PREFIX-dashboard
+    spec:
+      serviceAccountName: $NAMESPACE
+      containers:
+        - name: dashboard
+          image: cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$TAG
+          command:
+            - sh
+            - -c
+            - |
+              . /vault/secrets/env
+              yarn start
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $PREFIX-dashboard
+  namespace: $NAMESPACE
+spec:
+  ipFamilyPolicy: PreferDualStack
+  selector:
+    app: $PREFIX-dashboard
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: $PREFIX-dashboard
+  namespace: $NAMESPACE
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - $DOMAIN
+      secretName: $PREFIX-bobbygeorge-dev
+  rules:
+    - host: $DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: $PREFIX-dashboard
+                port:
+                  number: 80
