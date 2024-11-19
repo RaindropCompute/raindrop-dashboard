@@ -28,6 +28,11 @@ spec:
       containers:
         - name: dashboard
           image: cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$TAG
+          env:
+            - name: NEXT_PUBLIC_API_BASE_URL
+              value: https://api-v1.$DOMAIN
+            - name: NEXT_PUBLIC_BASE_URL
+              value: https://$DOMAIN
           command:
             - sh
             - -c

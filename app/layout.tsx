@@ -1,17 +1,9 @@
+import UserProvider from "@/components/UserProvider";
 import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import Theme from "@/components/Theme";
+import AuthRequired from "@/components/AuthRequired";
+import Navbar from "@/components/Navbar";
+import { Box } from "@mui/joy";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,9 +17,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
-      </body>
+      <UserProvider>
+        <body>
+          <Theme>
+            <AuthRequired>
+              <Navbar />
+              <Box p={2} maxWidth="1000px" mx="auto">
+                {children}
+              </Box>
+            </AuthRequired>
+          </Theme>
+        </body>
+      </UserProvider>
     </html>
   );
 }
