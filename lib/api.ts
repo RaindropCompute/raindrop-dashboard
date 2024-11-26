@@ -1,8 +1,37 @@
+export interface VideoDetail {
+  id: string;
+  uploadTime: string;
+  status: "PENDING" | "UPLOADED" | "IN_PROGRESS" | "FINISHED" | "ERROR";
+  error: string | null;
+  uploadedBy: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  };
+  title: string;
+  metadata: {
+    duration: number;
+    bitrate: number;
+    width: number;
+    height: number;
+    framerate: number;
+    audioSampleRate: number;
+  } | null;
+}
+
 export interface Video {
   id: string;
-  title: string | null;
-  length: string;
-  createdAt: string;
+  uploadTime: string;
+  status: "PENDING" | "UPLOADED" | "IN_PROGRESS" | "FINISHED" | "ERROR";
+  metadata: {
+    duration: number;
+  } | null;
+  title: string;
+}
+
+export interface UploadedVideo {
+  id: string;
+  uploadUrl?: string;
 }
 
 export interface VideoRequest {
@@ -11,10 +40,16 @@ export interface VideoRequest {
 }
 
 export class RaindropClient {
-  token: string;
+  token: string | (() => Promise<string>);
   baseUrl: string;
 
-  constructor({ token, baseUrl }: { token: string; baseUrl?: string }) {
+  constructor({
+    token,
+    baseUrl,
+  }: {
+    token: string | (() => Promise<string>);
+    baseUrl?: string;
+  }) {
     this.token = token;
     this.baseUrl = baseUrl ?? "https://api-v1.raindrop.bobbygeorge.dev";
   }
@@ -24,8 +59,10 @@ export class RaindropClient {
     route: string,
     data?: U
   ): Promise<T> {
+    const token =
+      typeof this.token === "function" ? await this.token() : this.token;
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.token}`,
+      Authorization: `Bearer ${token}`,
     };
     const init: RequestInit = { method, headers };
     if (data) {
@@ -41,7 +78,7 @@ export class RaindropClient {
       );
     }
 
-    if (res.body) {
+    if (res.headers.get("content-type")?.split(";")[0] === "application/json") {
       const json: T = await res.json();
       return json;
     } else {
@@ -53,20 +90,31 @@ export class RaindropClient {
     return await this.request<Video[]>("GET", "/video");
   }
 
+  async getVideo(videoId: string) {
+    return await this.request<VideoDetail>(`GET`, `/video/${videoId}`);
+  }
+
   async createVideo(video: VideoRequest) {
-    return await this.request<Video, VideoRequest>("POST", "/video", video);
+    return await this.request<UploadedVideo, VideoRequest>(
+      "POST",
+      "/video",
+      video
+    );
   }
 
   async uploadVideo({ file, ...video }: VideoRequest & { file: File }) {
-    const result = await this.request<
-      Video & { uploadUrl: string },
-      VideoRequest
-    >("POST", "/video", video);
+    const result = await this.request<UploadedVideo, VideoRequest>(
+      "POST",
+      "/video",
+      video
+    );
+    const token =
+      typeof this.token === "function" ? await this.token() : this.token;
 
-    const res = await fetch(new URL(result?.uploadUrl, this.baseUrl), {
+    const res = await fetch(new URL(result.uploadUrl!, this.baseUrl), {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": file.type,
       },
       body: file,
@@ -78,5 +126,9 @@ export class RaindropClient {
     }
 
     return result;
+  }
+
+  async deleteVideo(videoId: string) {
+    return await this.request("DELETE", `/video/${videoId}`);
   }
 }

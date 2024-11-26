@@ -1,14 +1,8 @@
-import {
-  Box,
-  Breadcrumbs,
-  Grid,
-  Link,
-  Stack,
-  Table,
-  Typography,
-} from "@mui/joy";
+import { Box, Breadcrumbs, Grid, Link, Stack, Typography } from "@mui/joy";
 import VideoPlayer from "@/components/VideoPlayer";
 import NextLink from "next/link";
+import VideoDetail from "./_components/VideoDetail";
+import DeleteButton from "./_components/DeleteButton";
 
 export default async function Page({
   params,
@@ -57,25 +51,14 @@ export default async function Page({
         </Grid>
       </Grid>
 
-      <Typography level="title-lg" mb={2}>
-        Video Details
-      </Typography>
-      <Table>
-        <tbody>
-          <tr>
-            <th scope="row">Title</th>
-            <td>Video Title</td>
-          </tr>
-          <tr>
-            <th scope="row">Length</th>
-            <td>1:23:45</td>
-          </tr>
-          <tr>
-            <th scope="row">Published</th>
-            <td>2022-01-01</td>
-          </tr>
-        </tbody>
-      </Table>
+      <Box sx={{ mb: 2 }}>
+        <Typography level="title-lg" mb={2}>
+          Video Details
+        </Typography>
+        <VideoDetail videoId={videoId} />
+      </Box>
+
+      <DeleteButton videoId={videoId} />
     </>
   );
 }

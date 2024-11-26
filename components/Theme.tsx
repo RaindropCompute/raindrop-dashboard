@@ -42,7 +42,7 @@ export default function Theme({ children }: { children: ReactNode }) {
   return (
     <>
       <InitColorSchemeScript />
-      <CssVarsProvider theme={theme} defaultMode="system">
+      <CssVarsProvider theme={theme} defaultMode="dark">
         <CssBaseline />
         {children}
       </CssVarsProvider>

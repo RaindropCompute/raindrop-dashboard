@@ -1,7 +1,6 @@
 "use client";
 
 import { RaindropClient } from "@/lib/api";
-import { useAuth0 } from "@auth0/auth0-react";
 import {
   createContext,
   ReactNode,
@@ -10,6 +9,7 @@ import {
   useState,
 } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAuth, useClerk } from "@clerk/nextjs";
 
 const AuthContext = createContext<{ client: RaindropClient | null }>({
   client: null,
@@ -21,34 +21,32 @@ export function useApiClient() {
 }
 
 export default function AuthRequired({ children }: { children: ReactNode }) {
-  const {
-    isAuthenticated,
-    isLoading,
-    loginWithRedirect,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const { isSignedIn, getToken, orgId, userId } = useAuth();
+  const { redirectToSignIn } = useClerk();
   const [client, setClient] = useState<RaindropClient | null>(null);
 
   useEffect(() => {
-    if (isLoading || isAuthenticated) {
-      return;
+    if (isSignedIn === false) {
+      redirectToSignIn();
     }
-
-    loginWithRedirect();
-  }, [isLoading, isAuthenticated, loginWithRedirect]);
+  }, [isSignedIn, redirectToSignIn]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      getAccessTokenSilently().then((token) => {
-        setClient(
-          new RaindropClient({
-            token,
-            baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-          })
-        );
-      });
+    if (isSignedIn) {
+      setClient(
+        new RaindropClient({
+          token: getToken as () => Promise<string>,
+          baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+        })
+      );
+    } else {
+      setClient(null);
     }
-  }, [isAuthenticated, getAccessTokenSilently]);
+  }, [getToken, isSignedIn]);
+
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["video"] });
+  }, [orgId, userId]);
 
   return (
     <QueryClientProvider client={queryClient}>
