@@ -40,6 +40,7 @@ pipeline {
       steps {
         container('docker') {
           sh 'docker login cme-harbor.int.bobbygeorge.dev -u $HARBOR_USR -p $HARBOR_PSW'
+          sh 'echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=aaa" > .env.local' // replaced at runtime
           sh 'docker build -t raindrop-dashboard --cache-to type=inline --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest .'
           sh '! [ "$GIT_BRANCH" = "main" ] || docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest'
           sh 'docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH'
