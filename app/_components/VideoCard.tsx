@@ -8,7 +8,6 @@ import {
   Box,
   Checkbox,
   Skeleton,
-  Badge,
   ColorPaletteProp,
   Chip,
 } from "@mui/joy";
