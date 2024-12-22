@@ -39,7 +39,7 @@ pipeline {
     stage('Build') {
       steps {
         container('docker') {
-          withVault([vaultSecrets: [[path: 'raindrop/prod/raindrop-api', secretValues: [[vaultKey: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY']]]]]) {
+          withVault([vaultSecrets: [[path: 'raindrop/prod/raindrop-dashboard', secretValues: [[vaultKey: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY']]]]]) {
             sh 'echo NEXT_PUBLIC_API_BASE_URL=https://api-v1.raindrop.bobbygeorge.dev >> .env.local'
             sh 'echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY >> .env.local'
 
