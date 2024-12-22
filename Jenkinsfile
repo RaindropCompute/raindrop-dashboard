@@ -33,22 +33,23 @@ pipeline {
 
   environment {
     HARBOR = credentials('harbor')
-    CLERK_PUBLISHABLE_KEY = credentials('clerk-publishable-key')
   }
 
   stages {
     stage('Build') {
       steps {
         container('docker') {
-          sh 'echo NEXT_PUBLIC_API_BASE_URL=https://api-v1.$(echo "$GIT_BRANCH" | tr \'[:upper:]\' \'[:lower:]\' | sed \'s/[^a-z0-9.-]//g\').raindrop.bobbygeorge.dev >> .env.local'
-          sh 'echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$CLERK_PUBLISHABLE_KEY >> .env.local'
+          withVault([vaultSecrets: [[path: 'raindrop/prod/raindrop-api', secretValues: [[vaultKey: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY']]]]]) {
+            sh 'echo NEXT_PUBLIC_API_BASE_URL=https://api-v1.raindrop.bobbygeorge.dev >> .env.local'
+            sh 'echo NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY >> .env.local'
 
-          sh 'docker login cme-harbor.int.bobbygeorge.dev -u $HARBOR_USR -p $HARBOR_PSW'
-          sh 'docker build -t raindrop-dashboard --cache-to type=inline --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest .'
-          sh '! [ "$GIT_BRANCH" = "main" ] || docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest'
-          sh 'docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH'
-          sh 'docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_COMMIT'
-          sh 'docker push -a cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard'
+            sh 'docker login cme-harbor.int.bobbygeorge.dev -u $HARBOR_USR -p $HARBOR_PSW'
+            sh 'docker build -t raindrop-dashboard --cache-to type=inline --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH --cache-from type=registry,ref=cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest .'
+            sh '! [ "$GIT_BRANCH" = "main" ] || docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:latest'
+            sh 'docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_BRANCH'
+            sh 'docker tag raindrop-dashboard cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard:$GIT_COMMIT'
+            sh 'docker push -a cme-harbor.int.bobbygeorge.dev/raindrop/raindrop-dashboard'
+          }
         }
       }
     }
