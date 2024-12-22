@@ -8,6 +8,18 @@ const nextConfig = {
         port: "5005",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "api-v1.raindrop.bobbygeorge.dev",
+        port: "443",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "api-v1.*.raindrop.bobbygeorge.dev",
+        port: "443",
+        pathname: "**",
+      },
     ],
   },
 };
